@@ -1,5 +1,5 @@
 <?php
-include 'connect.php';
+include 'connect.php'; // Ensure this file sets $con correctly
 
 // Get current year and cutoff year
 $currentYear = date("Y");
@@ -8,24 +8,38 @@ $cutoffYear = $currentYear - 5;
 $search = "";
 if (isset($_GET['search']) && $_GET['search'] !== "") {
     $search = trim($_GET['search']);
-    $searchTerm = "%" . $search . "%";
+    $searchTerm = "%" . mysqli_real_escape_string($con, $search) . "%"; // Escape user input
+    $cutoffYear = (int)$cutoffYear; // Force integer type
 
-    // Prepared statement for search
-    $stmt = $conn->prepare("SELECT * FROM cars 
-                            WHERE (brand LIKE ? OR model LIKE ?) 
-                            AND year >= ? 
-                            ORDER BY year DESC");
-    $stmt->bind_param("ssi", $searchTerm, $searchTerm, $cutoffYear);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    // Construct the query for searching cars
+    $query = "SELECT * FROM cars 
+              WHERE (brand LIKE '$searchTerm' OR model LIKE '$searchTerm') 
+              AND year >= $cutoffYear 
+              ORDER BY year DESC";
+    
+    // Execute the query
+    $run = mysqli_query($con, $query);
+    if (!$run) {
+        echo "Failed to run query: " . mysqli_error($con);
+        exit(); // Optional: stop script execution
+    }
+    $result = $run; // Store the result set
 } else {
-    // Prepared statement for recent cars
-    $stmt = $conn->prepare("SELECT * FROM cars 
-                            WHERE year >= ? 
-                            ORDER BY year DESC");
-    $stmt->bind_param("i", $cutoffYear);
-    $stmt->execute();
-    $result = $stmt->get_result();
+    // Query for recent cars
+    $cutoffYear = (int)$cutoffYear; // Force integer type
+
+    // Construct the query for recent cars
+    $query = "SELECT * FROM cars 
+              WHERE year >= $cutoffYear 
+              ORDER BY year DESC";
+    
+    // Execute the query
+    $run = mysqli_query($con, $query);
+    if (!$run) {
+        echo "Failed to run query: " . mysqli_error($con);
+        exit(); // Optional: stop script execution
+    }
+    $result = $run; // Store the result set
 }
 ?>
 <!DOCTYPE html>
@@ -33,6 +47,7 @@ if (isset($_GET['search']) && $_GET['search'] !== "") {
 <head>
     <meta charset="UTF-8">
     <title>Car Dealership</title>
+    <link rel="stylesheet" href="style.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -99,7 +114,8 @@ if (isset($_GET['search']) && $_GET['search'] !== "") {
 
     <div class="search-box">
         <form method="GET" action="index.php">
-            <input type="text" name="search" placeholder="Search by Brand or Model" value="<?php echo htmlspecialchars($search); ?>">
+            <input type="text" name="search" placeholder="Search by Brand or Model"
+             value="<?php echo htmlspecialchars($search); ?>">
             <button type="submit">Search</button>
         </form>
     </div>

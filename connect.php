@@ -1,7 +1,8 @@
 <?php
-$conn = mysqli_connect("localhost", "root", "", "car_dealership");
+$con = mysqli_connect("localhost", "root", "", "car_dealership");
 
-if (!$conn) {
-    die("Database Connection Failed: " . mysqli_connect_error());
+if (!$con) {
+    echo "Database Connection Failed: ";
+    exit(); // Optional: stop script execution
 }
 ?>
